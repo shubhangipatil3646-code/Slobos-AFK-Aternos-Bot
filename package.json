@@ -11,6 +11,7 @@
     "mineflayer-pathfinder": "latest",
     "minecraft-data": "latest",
     "axios": "latest",
-    "debug": "latest"
+    "debug": "latest",
+    "express": "latest"
   }
 }
