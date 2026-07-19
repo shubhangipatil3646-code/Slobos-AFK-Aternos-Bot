@@ -6,10 +6,10 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "bedrock-protocol": "^1.2.0",
-    "mineflayer": "^4.22.0",
-    "mineflayer-pathfinder": "^2.4.4",
-    "minecraft-data": "^3.78.0",
+    "bedrock-protocol": "latest",
+    "mineflayer": "latest",
+    "mineflayer-pathfinder": "latest",
+    "minecraft-data": "latest",
     "axios": "^1.7.0"
   }
 }
