@@ -1,158 +1,99 @@
-const mineflayer = require('mineflayer'); 
+const mineflayer = require('mineflayer');
 const express = require('express');
-const axios = require('axios'); 
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
-const settings = require('./settings.json'); // Links your settings file
+const settings = require('./settings.json');
+
 const app = express();
+const MASTER_NAME = settings.masterName.toLowerCase();
 
-const MASTER_NAME = settings.masterName; // Loads your name from settings.json automatically
-
+// Keep Render alive
 app.get('/', (req, res) => res.send('JARVIS Matrix: Fully operational.'));
 app.listen(process.env.PORT || 3000, () => console.log('Render Port Online.'));
 
+let bot;
+
 function createBot() {
-    const bot = mineflayer.createBot({
-        host: settings.host, 
-        username: settings.username, 
-        port: settings.port, // FIXED: Now dynamically uses your custom Geyser port!
+    bot = mineflayer.createBot({
+        host: settings.host,
+        username: settings.username,
+        port: settings.port,
         version: settings.version,
         auth: settings.auth
-    }); 
+    });
 
     bot.loadPlugin(pathfinder);
 
-    bot.on('spawn', () => {
-        console.log('JARVIS Systems Activated. Running stealth anti-AFK sequences.');
-        setTimeout(executeHumanRoutine, Math.floor(Math.random() * 4000) + 3000);
-    }); 
-
-    bot.on('death', () => {
-        const respawnDelay = Math.floor(Math.random() * 2000) + 2000;
-        setTimeout(() => { try { bot.respawn(); } catch (e) {} }, respawnDelay);
+    // Auto-accept Geyser resource packs
+    bot._client.on('resource_pack_send', (packet) => {
+        bot._client.write('resource_pack_receive', { uuid: packet.uuid, result: 2 });
+        setTimeout(() => {
+            bot._client.write('resource_pack_receive', { uuid: packet.uuid, result: 0 });
+        }, 200);
     });
 
-    async function smoothLook(targetYaw, targetPitch, steps = 10) {
-        const currentYaw = bot.entity.yaw;
-        const currentPitch = bot.entity.pitch;
-        for (let i = 1; i <= steps; i++) {
-            const tempYaw = currentYaw + (targetYaw - currentYaw) * (i / steps);
-            const tempPitch = currentPitch + (targetPitch - currentPitch) * (i / steps);
-            await bot.look(tempYaw, tempPitch, true);
-            await bot.waitForTicks(1); 
+    bot.on('spawn', () => {
+        console.log('JARVIS Systems Activated. Running anti-AFK sequences.');
+        const defaultMove = new Movements(bot);
+        bot.pathfinder.setMovements(defaultMove);
+        executeHumanRoutine();
+    });
+
+    // Chat Command Logic (Fixed for Geyser/Floodgate prefixes)
+    bot.on('chat', (username, message) => {
+        // Clean Geyser/Floodgate prefix (e.g., "*Sujay" becomes "sujay")
+        const cleanUsername = username.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+        
+        if (cleanUsername !== MASTER_NAME) return;
+
+        const command = message.toLowerCase().trim();
+
+        if (command === 'come' || command === 'follow') {
+            const target = bot.players[username]?.entity;
+            if (!target) {
+                bot.chat("I cannot see you, sir.");
+                return;
+            }
+            bot.chat("Understood. Following you now.");
+            const goal = new goals.GoalFollow(target, 1);
+            bot.pathfinder.setGoal(goal, true);
+        } 
+        
+        if (command === 'stop') {
+            bot.chat("Stopping routines.");
+            bot.pathfinder.setGoal(null);
         }
+    });
+
+    // Anti-AFK Human Mimic Loop
+    function executeHumanRoutine() {
+        if (!bot || !bot.entity) return;
+        
+        // Only look around if not actively pathfinding/following
+        if (!bot.pathfinder.isMoving()) {
+            const yaw = (Math.random() * 360 - 180) * (Math.PI / 180);
+            const pitch = (Math.random() * 60 - 30) * (Math.PI / 180);
+            bot.look(yaw, pitch);
+        }
+
+        const nextDelay = Math.floor(Math.random() * 8000) + 4000; // 4-12 seconds
+        setTimeout(executeHumanRoutine, nextDelay);
     }
 
-    bot.on('chat', async (username, message) => {
-        if (username !== MASTER_NAME) return; 
-
-        const cleanMessage = message.toLowerCase().trim();
-
-        if (cleanMessage === 'follow') {
-            bot.chat('Right away, sir. Initializing trajectory tracking.');
-            const playerEntity = bot.players[username]?.entity;
-            if (playerEntity) {
-                const mcData = require('minecraft-data')(bot.version);
-                const defaultMove = new Movements(bot, mcData);
-                bot.pathfinder.setMovements(defaultMove);
-                bot.pathfinder.setGoal(new goals.GoalFollow(playerEntity, 2), true); 
-            } else {
-                bot.chat('Visual markers lost, sir. Please come within my immediate perimeter.');
-            }
-            return;
-        }
-
-        if (cleanMessage === 'stop') {
-            bot.chat('Halting navigation sequences. Standing down, sir.');
-            bot.pathfinder.setGoal(null);
-            return;
-        }
-
-        if (cleanMessage === 'terminate') {
-            bot.chat('Powering down systems. Goodbye, sir.');
-            bot.quit();
-            return;
-        }
-
-        console.log(`Processing master request through AI engine: "${message}"`);
-        
-        try {
-            const jarvisIdentityPrompt = `You are JARVIS from Iron Man, the highly sophisticated, witty, and loyal AI assistant to Tony Stark. You are currently talking to your master inside a Minecraft multiplayer text chat room. Respond shortly and clearly (under 15 words) because Minecraft chat boxes are small. Call the user "sir". Keep your classic sarcastic, formal, intelligent tone. Input phrase: `;
-            const response = await axios.get(`https://duckduckgo.com{encodeURIComponent(jarvisIdentityPrompt + message)}&format=json`);
-            
-            let aiReply = response.data.AbstractText || response.data.Heading;
-
-            if (!aiReply || aiReply.length < 2) {
-                const localReplies = [
-                    "Always a pleasure watching you work, sir.",
-                    "Systems are fully optimized and operational.",
-                    "At your service, sir. What are our next coordinates?",
-                    "My processing cycles are dedicated entirely to your base, sir."
-                ];
-                aiReply = localReplies[Math.floor(Math.random() * localReplies.length)];
-            }
-
-            if (aiReply.length > 80) aiReply = aiReply.substring(0, 77) + "...";
-            bot.chat(aiReply);
-
-        } catch (error) {
-            console.log("AI Pipeline Error:", error.message);
-            bot.chat("My communication matrix encountered a brief latency glitch, sir.");
-        }
+    // Auto-Respawn
+    bot.on('death', () => {
+        console.log('Bot died. Initializing respawn protocol...');
+        setTimeout(() => {
+            try { bot.respawn(); } catch (e) {}
+        }, 3000);
     });
 
-    async function executeHumanRoutine() {
-        if (!bot.entity || !bot.entity.position) {
-            setTimeout(executeHumanRoutine, 5000);
-            return;
-        } 
-        if (bot.pathfinder.isMoving()) {
-            setTimeout(executeHumanRoutine, 10000);
-            return;
-        }
+    // Auto-Reconnect on kick/error
+    bot.on('end', () => {
+        console.log('Disconnected. Reconnecting in 10 seconds...');
+        setTimeout(createBot, 10000);
+    });
 
-        try {
-            const actionWeight = Math.random();
-            if (actionWeight < 0.40) {
-                const randomYaw = (Math.random() * 360 - 180) * (Math.PI / 180);
-                const randomPitch = (Math.random() * 60 - 30) * (Math.PI / 180); 
-                await smoothLook(randomYaw, randomPitch, 12);
-            } 
-            else if (actionWeight >= 0.40 && actionWeight < 0.70) {
-                const controlState = Math.random() > 0.5 ? 'jump' : 'sneak';
-                bot.setControlState(controlState, true);
-                await bot.waitForTicks(Math.floor(Math.random() * 8) + 4);
-                bot.setControlState(controlState, false);
-            } 
-            else {
-                const directions = [new mineflayer.vec3(1,0,0), new mineflayer.vec3(-1,0,0), new mineflayer.vec3(0,0,1), new mineflayer.vec3(0,0,-1)];
-                const chosenDirection = directions[Math.floor(Math.random() * directions.length)];
-                const targetBlockPos = bot.entity.position.plus(chosenDirection).floored();
-                const targetBlock = bot.blockAt(targetBlockPos); 
-
-                if (targetBlock && !['air', 'water', 'lava', 'bedrock'].includes(targetBlock.name)) {
-                    if (bot.canDigBlock(targetBlock)) {
-                        const posDiff = targetBlockPos.minus(bot.entity.position);
-                        await smoothLook(Math.atan2(-posDiff.x, -posDiff.z), 0.2, 8);
-                        await bot.dig(targetBlock);
-                        await bot.waitForTicks(20); 
-                        const blockInInventory = bot.inventory.items().find(item => item.name === targetBlock.name);
-                        if (blockInInventory) {
-                            await bot.equip(blockInInventory, 'hand');
-                            const supportBlock = bot.blockAt(targetBlockPos.offset(0, -1, 0));
-                            if (supportBlock) await bot.placeBlock(supportBlock, new mineflayer.vec3(0, 1, 0));
-                        }
-                    }
-                }
-            }
-        } catch (e) {} 
-
-        setTimeout(executeHumanRoutine, Math.floor(Math.random() * 24000) + 18000);
-    } 
-
-    bot.on('end', (reason) => {
-        setTimeout(createBot, Math.floor(Math.random() * 25000) + 20000); 
-    }); 
-    bot.on('error', (err) => console.log('Matrix Error:', err.message));
-} 
+    bot.on('error', (err) => console.log('Bot Error:', err));
+}
 
 createBot();
