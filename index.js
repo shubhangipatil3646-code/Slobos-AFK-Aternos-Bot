@@ -2,10 +2,10 @@ const mineflayer = require('mineflayer');
 const express = require('express');
 const axios = require('axios'); 
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
-const settings = require('./settings.json'); // Links your settings file
+const settings = require('./settings.json'); 
 const app = express();
 
-const MASTER_NAME = settings.masterName; // Loads your name from settings.json automatically
+const MASTER_NAME = settings.masterName; 
 
 app.get('/', (req, res) => res.send('JARVIS Matrix: Fully operational.'));
 app.listen(process.env.PORT || 3000, () => console.log('Render Port Online.'));
