@@ -17,7 +17,6 @@ function createBot() {
         host: settings.host,
         username: settings.username,
         port: settings.port,
-        version: settings.version,
         auth: settings.auth
     });
 
