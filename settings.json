@@ -2,7 +2,7 @@
   "host": "sujay4444.aternos.me",
   "username": "JARVIS_Bot",
   "port": 25565,
-  "version": false,
-  "auth": "microsoft",
-  "masterName": ".Stevenn9539"
+  "version": "1.20.80",
+  "auth": "offline",
+  "masterName": "Steven9539"
 }
