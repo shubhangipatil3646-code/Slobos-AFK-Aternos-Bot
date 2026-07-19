@@ -2,10 +2,10 @@ const mineflayer = require('mineflayer');
 const express = require('express');
 const axios = require('axios'); 
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
-const settings = require('./settings.json'); 
+const settings = require('./settings.json'); // Links your settings file
 const app = express();
 
-const MASTER_NAME = settings.masterName; 
+const MASTER_NAME = settings.masterName; // Loads your name from settings.json automatically
 
 app.get('/', (req, res) => res.send('JARVIS Matrix: Fully operational.'));
 app.listen(process.env.PORT || 3000, () => console.log('Render Port Online.'));
@@ -14,6 +14,7 @@ function createBot() {
     const bot = mineflayer.createBot({
         host: settings.host, 
         username: settings.username, 
+        port: settings.port, // FIXED: Now dynamically uses your custom Geyser port!
         version: settings.version,
         auth: settings.auth
     }); 
