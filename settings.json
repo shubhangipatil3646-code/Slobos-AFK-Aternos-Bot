@@ -1,6 +1,7 @@
 {
   "host": "sujay4444.aternos.me",
   "username": "JARVIS_Bot",
+  "port": 17331,
   "version": false,
   "auth": "microsoft",
   "masterName": ".Stevenn9539"
