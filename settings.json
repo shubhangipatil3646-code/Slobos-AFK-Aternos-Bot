@@ -3,6 +3,6 @@
   "username": "JARVIS_Bot",
   "port": 17331,
   "version": false,
-  "auth": "microsoft",
-  "masterName": ".Stevenn9539"
+  "auth": "offline",
+  "masterName": ".Steven9539"
 }
