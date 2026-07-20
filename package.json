@@ -1,5 +1,5 @@
 {
-  "name": "bedrock-afk-bot",
+  "name": "ultron-afk-bot",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -8,6 +8,7 @@
   "dependencies": {
     "mineflayer": "latest",
     "mineflayer-pathfinder": "latest",
-    "express": "latest"
+    "express": "latest",
+    "axios": "latest"
   }
 }
