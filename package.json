@@ -6,12 +6,8 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "bedrock-protocol": "latest",
     "mineflayer": "latest",
     "mineflayer-pathfinder": "latest",
-    "minecraft-data": "latest",
-    "axios": "latest",
-    "debug": "latest",
     "express": "latest"
   }
 }
