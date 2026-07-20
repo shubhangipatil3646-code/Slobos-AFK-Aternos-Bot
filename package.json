@@ -1,13 +1,15 @@
 {
-  "name": "ultron-afk-matrix",
+  "name": "minecraft-afk-bot",
   "version": "1.0.0",
+  "description": "24/7 AFK Anti-AFK Bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "mineflayer": "4.21.0",
-    "mineflayer-pathfinder": "2.4.2",
-    "express": "4.19.2"
+    "mineflayer": "^4.16.0",
+    "mineflayer-tool": "^2.1.1",
+    "mineflayer-pathfinder": "^2.6.4",
+    "mineflayer-auto-eat": "^1.2.0"
   }
 }
