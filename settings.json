@@ -1,1 +1,8 @@
-
+{
+  "host": "sujay4444.aternos.me",
+  "port": 17331,
+  "username": "AFK_Bot_007",
+  "version": false,
+  "auth": "offline",
+  "antiAfkDelay": 30000
+}
