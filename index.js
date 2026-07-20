@@ -4,9 +4,8 @@ const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
 const settings = require('./settings.json');
 
 const app = express();
-const MASTER_NAME = settings.masterName.toLowerCase();
+const MASTER_NAME = settings.masterName.toLowerCase(); // matches 'steven9539'
 
-// Keep Render alive
 app.get('/', (req, res) => res.send('JARVIS Matrix: Fully operational.'));
 app.listen(process.env.PORT || 3000, () => console.log('Render Port Online.'));
 
@@ -22,7 +21,6 @@ function createBot() {
 
     bot.loadPlugin(pathfinder);
 
-    // Auto-accept Geyser resource packs
     bot._client.on('resource_pack_send', (packet) => {
         bot._client.write('resource_pack_receive', { uuid: packet.uuid, result: 2 });
         setTimeout(() => {
@@ -37,56 +35,59 @@ function createBot() {
         executeHumanRoutine();
     });
 
-    // Chat Command Logic (Fixed for Geyser/Floodgate prefixes)
-    bot.on('chat', (username, message) => {
-        // Clean Geyser/Floodgate prefix (e.g., "*Sujay" becomes "sujay")
-        const cleanUsername = username.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+    // Global Message Scanner (Catches any chat formatting variations)
+    bot.on('messagestr', (message, position) => {
+        if (position === 'game_info') return; // Ignore action bars
+
+        const rawMessage = message.toLowerCase();
         
-        if (cleanUsername !== MASTER_NAME) return;
+        // Security check: Verify that your master name sent the message
+        if (!rawMessage.includes(MASTER_NAME)) return;
 
-        const command = message.toLowerCase().trim();
+        console.log(`Detected Master Message: ${message}`);
 
-        if (command === 'come' || command === 'follow') {
-            const target = bot.players[username]?.entity;
-            if (!target) {
-                bot.chat("I cannot see you, sir.");
+        // Extract commands even if wrapped in brackets or tags
+        if (rawMessage.includes('come') || rawMessage.includes('follow')) {
+            // Find the player object by checking partial name matches
+            const targetPlayer = Object.keys(bot.players).find(p => p.toLowerCase().includes(MASTER_NAME));
+            const targetEntity = bot.players[targetPlayer]?.entity;
+
+            if (!targetEntity) {
+                bot.chat("I cannot see you nearby, sir.");
                 return;
             }
-            bot.chat("Understood. Following you now.");
-            const goal = new goals.GoalFollow(target, 1);
+
+            bot.chat("Understood. Following your coordinates.");
+            const goal = new goals.GoalFollow(targetEntity, 1);
             bot.pathfinder.setGoal(goal, true);
-        } 
-        
-        if (command === 'stop') {
-            bot.chat("Stopping routines.");
+        }
+
+        if (rawMessage.includes('stop')) {
+            bot.chat("Stopping active tracking routines.");
             bot.pathfinder.setGoal(null);
         }
     });
 
-    // Anti-AFK Human Mimic Loop
+    // Anti-AFK Head Matrix
     function executeHumanRoutine() {
         if (!bot || !bot.entity) return;
         
-        // Only look around if not actively pathfinding/following
         if (!bot.pathfinder.isMoving()) {
             const yaw = (Math.random() * 360 - 180) * (Math.PI / 180);
             const pitch = (Math.random() * 60 - 30) * (Math.PI / 180);
             bot.look(yaw, pitch);
         }
 
-        const nextDelay = Math.floor(Math.random() * 8000) + 4000; // 4-12 seconds
+        const nextDelay = Math.floor(Math.random() * 8000) + 4000;
         setTimeout(executeHumanRoutine, nextDelay);
     }
 
-    // Auto-Respawn
     bot.on('death', () => {
-        console.log('Bot died. Initializing respawn protocol...');
         setTimeout(() => {
             try { bot.respawn(); } catch (e) {}
         }, 3000);
     });
 
-    // Auto-Reconnect on kick/error
     bot.on('end', () => {
         console.log('Disconnected. Reconnecting in 10 seconds...');
         setTimeout(createBot, 10000);
